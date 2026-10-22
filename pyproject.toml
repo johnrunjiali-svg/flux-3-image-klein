@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Inference codebase for FLUX 3 Image Klein"
 readme = "README.md"
 license = { file = "LICENSE" }
-requires-python = ">=3.10,<3.13"
+requires-python = ">=3.11,<3.13"
 authors = [
   { name = "Black Forest Labs", email = "support@blackforestlabs.ai" }
 ]
@@ -27,11 +27,6 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
   "ruff==0.6.8",
-]
-nvfp4 = [  # --nvfp4 (Blackwell)
-  "flashinfer-python==0.6.8.post1",
-  "flashinfer-cubin==0.6.8.post1",
-  "flashinfer-jit-cache==0.6.8.post1",  # prebuilt kernels: no nvcc (index: https://flashinfer.ai/whl/cu130)
 ]
 
 [build-system]
