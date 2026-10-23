@@ -197,17 +197,13 @@ def main() -> None:
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--share", action="store_true", help="public gradio link")
     parser.add_argument("--offload", action="store_true", help="keep the DiT not in use on the CPU")
-    quant = parser.add_mutually_exclusive_group()
-    quant.add_argument("--fp8", action="store_true", help="rowwise FP8 DiTs, from <weights entry>/variants/fp8r")
-    quant.add_argument("--nvfp4", action="store_true", help="NVFP4 DiTs (Blackwell), from <weights entry>/variants/nvfp4")
     parser.add_argument("--no-pup", action="store_true", help="do not load the prompt upsampler")
     parser.add_argument("--pup-memory", type=float, default=0.35, help="share of the GPU reserved for the upsampler")
     args = parser.parse_args()
 
-    quant = "fp8" if args.fp8 else "nvfp4" if args.nvfp4 else ""
-    dits = {name: str(dit_path(name, quant)) for name in MODELS if dit_path(name, quant).exists()}
+    dits = {name: str(dit_path(name)) for name in MODELS if dit_path(name).exists()}
     if not dits:
-        raise SystemExit(f"no DiT under {WEIGHTS}: expected one of {[str(dit_path(name, quant)) for name in MODELS]}")
+        raise SystemExit(f"no DiT under {WEIGHTS}: expected one of {[str(dit_path(name)) for name in MODELS]}")
     has_pup = not args.no_pup and (WEIGHTS / "pup").exists()
     models = Models(dits, str(WEIGHTS / "pup") if has_pup else None, args.pup_memory, offload=args.offload)
     build(models, has_pup).queue(default_concurrency_limit=1).launch(

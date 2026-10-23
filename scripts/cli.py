@@ -28,14 +28,11 @@ def main() -> None:
     parser.add_argument("--seed", type=int)
     parser.add_argument("--no-pup", action="store_true", help="send the prompt as typed instead of upsampling it first; only for a prompt that already is an upsampler caption")
     parser.add_argument("--pup-memory", type=float, default=0.35, help="share of the GPU reserved for the upsampler")
-    quant = parser.add_mutually_exclusive_group()
-    quant.add_argument("--fp8", action="store_true", help="rowwise FP8 DiT, from <weights entry>/variants/fp8r")
-    quant.add_argument("--nvfp4", action="store_true", help="NVFP4 DiT (Blackwell), from <weights entry>/variants/nvfp4")
     parser.add_argument("--dit", help=f"DiT checkpoint, instead of {WEIGHTS}/<model weights entry>")
     parser.add_argument("--safety", action="store_true", help="check the prompt, references and output; refuse if flagged")
     args = parser.parse_args()
 
-    dit = args.dit or str(dit_path(args.model, "fp8" if args.fp8 else "nvfp4" if args.nvfp4 else ""))
+    dit = args.dit or str(dit_path(args.model))
     models = Models({args.model: dit}, None if args.no_pup else str(WEIGHTS / "pup"), args.pup_memory)
     boxes = json.loads(Path(args.boxes).read_text()) if args.boxes else None
     images = [Image.open(path) for path in args.image]

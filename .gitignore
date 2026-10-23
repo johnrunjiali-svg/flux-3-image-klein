@@ -7,3 +7,5 @@ __pycache__/
 !src/flux3/pup_prompts_external_vlm.json
 !examples/**
 *.egg-info/
+.ipynb_checkpoints/
+notebooks/outputs/

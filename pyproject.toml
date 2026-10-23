@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Inference codebase for FLUX 3 Image Klein"
 readme = "README.md"
 license = { file = "LICENSE" }
-requires-python = ">=3.10,<3.13"
+requires-python = ">=3.12,<3.13"
 authors = [
   { name = "Black Forest Labs", email = "support@blackforestlabs.ai" }
 ]
@@ -22,17 +22,28 @@ dependencies = [
   "numpy==2.3.5",
   "gradio==6.28.0",
   "gradio_image_annotation==0.5.6",
+  "matplotlib>=3.9",
+  "ipykernel>=6.29",
 ]
 
 [project.optional-dependencies]
 dev = [
   "ruff==0.6.8",
 ]
-nvfp4 = [  # --nvfp4 (Blackwell)
-  "flashinfer-python==0.6.8.post1",
-  "flashinfer-cubin==0.6.8.post1",
-  "flashinfer-jit-cache==0.6.8.post1",  # prebuilt kernels: no nvcc (index: https://flashinfer.ai/whl/cu130)
-]
+
+[tool.uv]
+environments = ["sys_platform == 'linux'"]  # CUDA builds only exist for Linux; keeps the lock to that platform
+
+# PyTorch CUDA 13 builds, as `pip install ... --extra-index-url https://download.pytorch.org/whl/cu130` in the README
+[[tool.uv.index]]
+name = "pytorch-cu130"
+url = "https://download.pytorch.org/whl/cu130"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu130" }
+torchvision = { index = "pytorch-cu130" }
+triton = { index = "pytorch-cu130" }
 
 [build-system]
 requires = ["setuptools>=64", "wheel"]

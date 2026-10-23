@@ -67,18 +67,20 @@ Same prompt, same seed: distilled (16 steps) left, base (50 steps, CFG) right. O
 ## Local installation
 
 
-To run FLUX 3 Image Klein in BF16 and FP8:
+This fork runs FLUX 3 Image Klein in BF16 only (the FP8 and NVFP4 paths of the upstream repository are removed).
+
+With [uv](https://docs.astral.sh/uv/) (the PyTorch CUDA 13 index is configured in `pyproject.toml`):
+
+```bash
+uv sync
+uv run python scripts/cli.py ...
+```
+
+With pip:
 
 ```bash
 python3.12 -m venv .venv && . .venv/bin/activate
 pip install -e . --extra-index-url https://download.pytorch.org/whl/cu130
-```
-
-To run FLUX 3 Image Klein in BF16, FP8 and NVFP4 (NVFP4 needs a Blackwell GPU):
-
-```bash
-python3.12 -m venv .venv && . .venv/bin/activate
-pip install -e '.[nvfp4]' --extra-index-url https://download.pytorch.org/whl/cu130 --extra-index-url https://flashinfer.ai/whl/cu130
 ```
 
 The installation was tested on B200; see [Memory](#memory) for other GPUs.
@@ -102,9 +104,8 @@ hf download black-forest-labs/flux-3-image-klein-pup --local-dir weights/pup
 hf download Falconsai/nsfw_image_detection --local-dir weights/nsfw-classifier
 ```
 
-`WEIGHTS_DIR` points at another root (default `./weights`). The quantized DiTs live under `variants/fp8r` and
-`variants/nvfp4` in each repository; the text encoder and autoencoder ship with both. `weights/pup` is the
-[prompt upsampler](#prompt-upsampling), which the model needs.
+`WEIGHTS_DIR` points at another root (default `./weights`). The text encoder and autoencoder ship with both
+models. `weights/pup` is the [prompt upsampler](#prompt-upsampling), which the model needs.
 
 ## Run the CLI
 
@@ -145,8 +146,6 @@ Format in [Bounding boxes](#bounding-boxes).
 
 ### Smaller GPUs
 
-`--fp8` (Ada, Hopper, Blackwell) or `--nvfp4` (Blackwell) load the quantized DiTs.
-
 An external vision-language model can also write the caption in place of the upsampler: give it the
 [system prompts](src/flux3/pup_prompts_external_vlm.json) and pass its answer with `--no-pup`.
 
@@ -155,7 +154,7 @@ caption with `--no-pup`:
 
 ```bash
 python -m flux3.pup --prompt "A man walking with his dog, afternoon sun" --out prompt.txt
-python scripts/cli.py "$(cat prompt.txt)" --model distilled --fp8 --no-pup --out out.png
+python scripts/cli.py "$(cat prompt.txt)" --model distilled --no-pup --out out.png
 ```
 
 Numbers in [Memory](#memory).
@@ -186,8 +185,8 @@ image.save("bandana.png")
 python scripts/app.py            # http://127.0.0.1:7860; --share for a public link
 ```
 
-Three tabs: **Layout** (draw boxes, type what goes in each), **Text to image**, **Edit**. `--offload`, `--fp8`,
-`--nvfp4` and `--no-pup` apply as in the CLI.
+Three tabs: **Layout** (draw boxes, type what goes in each), **Text to image**, **Edit**. `--offload` and
+`--no-pup` apply as in the CLI.
 
 ## Prompt upsampling
 
@@ -253,15 +252,15 @@ the RTX cards (the ComfyUI files, [Run it elsewhere](#run-it-elsewhere)).
 
 Peak GPU memory (nvidia-smi) on a B200 at 1024x1024, text-to-image and an edit with one reference:
 
-| | bf16 | `--fp8` | `--nvfp4` |
-|---|---|---|---|
-| `cli.py --model distilled --no-pup` | 31 GB | 26 GB | 25 GB |
-| `cli.py --model base --no-pup` | 31 GB | 29 GB | 26 GB |
+| | bf16 |
+|---|---|
+| `cli.py --model distilled --no-pup` | 31 GB |
+| `cli.py --model base --no-pup` | 31 GB |
 
-The upsampler reserves `--pup-memory` of the GPU (default 0.35). `--fp8` needs Ada, Hopper or Blackwell; `--nvfp4`
-needs Blackwell and the `[nvfp4]` install, not with `--offload`.
+The upsampler reserves `--pup-memory` of the GPU (default 0.35).
 
-This code has no int8 path. On GPUs without FP8 (RTX 30 series and older) use the int8 files from [black-forest-labs/flux-3-image-klein-comfy](https://huggingface.co/black-forest-labs/flux-3-image-klein-comfy) in ComfyUI.
+This code has no quantized path. For FP8, NVFP4 or int8 files use the upstream repository or
+[black-forest-labs/flux-3-image-klein-comfy](https://huggingface.co/black-forest-labs/flux-3-image-klein-comfy) in ComfyUI.
 
 ## Safety
 

@@ -20,7 +20,6 @@ MODELS = {  # weights entry (the Hub repository, downloaded there), default step
     "base": {"dit": "flux-3-image-klein-base", "steps": 50, "guidance": 4.0},
     "distilled": {"dit": "flux-3-image-klein", "steps": 16, "guidance": None},
 }
-QUANT = {"fp8": "fp8r", "nvfp4": "nvfp4"}  # variants/ subfolder of the weights entry
 IMAGE_ROPE_SCALE = 0.5  
 MATCH_MAX_PIXELS = 4 * 1024 * 1024  # first reference, padded canvas included
 MIN_SIDE, MAX_SIDE = 64, 4096
@@ -28,11 +27,9 @@ MAX_REFERENCES = 10
 MULTI_REFERENCE_MAX_PIXELS = 1024 * 1024  # each reference of a multi-reference edit
 
 
-def dit_path(model: str, quant: str = "") -> Path:
-    """The DiT of ``model`` under WEIGHTS: the repository root for bf16, ``variants/<name>`` for a quantized one
-    (``quant`` is a key of QUANT or empty)."""
-    root = WEIGHTS / MODELS[model]["dit"]
-    return root / "variants" / QUANT[quant] if quant else root
+def dit_path(model: str) -> Path:
+    """The bf16 DiT of ``model`` under WEIGHTS: the repository root of its weights entry."""
+    return WEIGHTS / MODELS[model]["dit"]
 
 
 class Pipeline:
