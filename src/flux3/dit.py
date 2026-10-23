@@ -1,6 +1,7 @@
 """ Image DiT: per-mode blocks, then shared single-stream blocks."""
 
 import math
+from collections.abc import Callable
 from dataclasses import dataclass
 
 import torch
@@ -157,6 +158,8 @@ class DiT(nn.Module):
     def __init__(self, flow_map: bool = False) -> None:
         super().__init__()
         self.flow_map = flow_map
+        # (B, L, 4) ids -> (B, 1, L, head_dim // 2, 2, 2) rotations; must be set before forward (e.g. to `rope_embed`)
+        self.rope_embed: Callable[[Tensor], Tensor] | None = None
         self.emb_in = nn.ModuleDict({m: nn.Linear(IN_CHANNELS[m], HIDDEN, bias=False) for m in ("image", "image_cond")})
         self.txt_in = nn.Linear(IN_CHANNELS["text"], HIDDEN, bias=False)
         self.time_in = MLPEmbedder(256, HIDDEN)
@@ -176,6 +179,8 @@ class DiT(nn.Module):
         timesteps_ref: flow map only, the time each sample jumps to."""
         if (timesteps_ref is not None) != self.flow_map:
             raise ValueError("timesteps_ref is required by, and only by, a flow-map DiT")
+        if self.rope_embed is None:
+            raise RuntimeError("DiT.rope_embed is not set; assign a rope embedding function before calling forward")
         data, ids, timesteps = dict(packed.data), dict(packed.ids), dict(packed.timesteps)
         for m in MODES:  # an empty mode gets one phantom token so the projections run; it is never attended
             if data[m].shape[0] == 0:
@@ -191,7 +196,7 @@ class DiT(nn.Module):
         early = {m: self.early_stream_modulations[mod_key(m)](vec[m]) for m in MODES}
         single = {m: self.single_stream_modulations[mod_key(m)](vec[m]) for m in MODES}
         x = {m: (self.txt_in if m == "text" else self.emb_in[m])(data[m]) for m in MODES}
-        freqs = {m: rope_embed(ids[m][None]) for m in MODES}
+        freqs = {m: self.rope_embed(ids[m][None]) for m in MODES}
         for d in range(DEPTH):
             for m in ("image", "image_cond"):
                 x[m] = self.content_mode_blocks[m][d](x[m], freqs[m], packed.mode_indices[m], early[m])
@@ -211,7 +216,7 @@ class DiT(nn.Module):
                     offset += b - a
             bounds.append((start, offset))
         h = torch.cat(chunks)
-        freqs_sm = rope_embed(torch.cat(id_chunks)[None])
+        freqs_sm = self.rope_embed(torch.cat(id_chunks)[None])
         mods = tuple(torch.cat(c) for c in mods)
         for block in self.single_blocks:
             h = block(h, freqs_sm, bounds, mods)
