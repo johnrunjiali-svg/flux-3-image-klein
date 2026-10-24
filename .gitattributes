@@ -1,0 +1,4 @@
+# Notebooks go through nbstripout (see README, "Notebooks in git"): outputs are kept, execution counts,
+# timing metadata and kernel/python version strings are dropped, so opening or rerunning a notebook does not
+# show it as modified unless the code or an output changed.
+*.ipynb filter=nbstripout diff=ipynb

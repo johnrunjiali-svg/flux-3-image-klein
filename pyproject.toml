@@ -29,6 +29,8 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
   "ruff==0.6.8",
+  "nbstripout>=0.8.1",  # git clean filter for notebooks, see .gitattributes
+  "nbdime>=4.0",        # cell-wise notebook diffs: `uvx nbdime diff a.ipynb b.ipynb`
 ]
 
 [tool.uv]

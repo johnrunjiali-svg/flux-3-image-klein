@@ -179,6 +179,26 @@ image.save("bandana.png")
 
 `Models` loads once; `generate` also takes `boxes`, `width`, `height`, `steps`, `guidance`, `pup`, `safety`.
 
+## Notebooks in git
+
+`notebooks/*.ipynb` go through a git clean filter (`.gitattributes`): outputs are kept in the repository, while
+execution counts, cell timing metadata and kernel/python version strings are stripped. The filter runs `nbstripout`
+through `uvx`, so it needs no project environment. Enable it once per clone, together with the `nbclean` alias:
+
+```bash
+git config filter.nbstripout.clean 'uvx nbstripout --keep-output --extra-keys "metadata.kernelspec metadata.language_info"'
+git config filter.nbstripout.smudge cat
+git config filter.nbstripout.required true
+git config diff.ipynb.textconv 'uvx nbstripout -t'   # git diff on a notebook shows it stripped
+git config alias.nbclean '!uvx nbstripout --keep-output --extra-keys "metadata.kernelspec metadata.language_info" notebooks/*.ipynb'
+```
+
+Workflow: run notebooks as usual; when done, `git nbclean` strips them in place, then `git status` / `git diff` / commit.
+Without `nbclean`, a notebook that was merely rerun still shows as modified in `git status` (git compares file sizes
+before running the filter), although `git diff` is empty and a commit would be a no-op; the filter guarantees that
+what gets committed is stripped either way. `uvx nbdime diff a.ipynb b.ipynb` gives cell-wise diffs. Images and other
+files the notebooks write to `notebooks/outputs/` are ignored.
+
 ## Demo
 
 ```bash
